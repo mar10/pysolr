@@ -208,6 +208,17 @@ def clean_xml_string(s):
     return ''.join(c for c in s if is_valid_xml_char_ordinal(ord(c)))
 
 
+def convert_dict_keys_to_str(d):
+    """Convert dictionary keys from unicode to str for Python 2."""
+    if IS_PY3:
+        res = d
+    else: 
+        res = {}
+        for k, v in d.iteritems():
+            res[str(k)] = v
+    return res
+
+
 class SolrError(Exception):
     pass
 
@@ -630,6 +641,11 @@ class Solr(object):
         response = result.get('response') or {}
         numFound = response.get('numFound', 0)
         self.log.debug("Found '%s' search results.", numFound)
+        
+        # Fix error "__init__() keywords must be strings"
+        # (In Python 2 **kwargs must be str, not unicode.)
+        result_kwargs = convert_dict_keys_to_str(result_kwargs)
+        
         return Results(response.get('docs', ()), numFound, **result_kwargs)
 
     def more_like_this(self, q, mltfl, **kwargs):
